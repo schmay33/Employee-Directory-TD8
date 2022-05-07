@@ -5,7 +5,9 @@ const gridContainer = document.querySelector(".grid-container");
 const overlay = document.querySelector(".overlay");
 const modalContainer = document.querySelector(".modal-content");
 const modalClose = document.querySelector(".modal-close");
-
+const modalNext = document.querySelector("#next");
+const modalPrev = document.querySelector("#prev");
+let modalList = [];
 
 
 function attachListeners() {
@@ -15,7 +17,7 @@ function attachListeners() {
             // select the card element based on its proximity to actual element clicked
             const card = e.target.closest(".card");
             const ssn = card.getAttribute("data-index");
-            const index = employees.findIndex(employee => employee.id.value === ssn);
+            const index = modalList.findIndex(employee => employee.id.value === ssn);
             displayModal(index);
         }
     });
@@ -24,7 +26,6 @@ function attachListeners() {
         overlay.classList.add("hidden");
     });
 }
-
 
 // fetch data from API
 fetch(urlAPI)
@@ -36,7 +37,8 @@ fetch(urlAPI)
 	.catch((err) => console.log(err));
 
 function displayEmployees(employeeData) {
-	employees = employeeData;
+    employees = employeeData;
+    modalList = employeeData;
 	// store the employee HTML as we create it
 	addEmployeesToDOM(employees);
 }
@@ -79,7 +81,7 @@ function displayModal(index) {
             postcode
         },
 		picture,
-	} = employees[index];
+	} = modalList[index];
 	let date = new Date(dob.date);
 	const modalHTML = `
     <img class="avatar" src="${picture.large}" />
@@ -92,10 +94,26 @@ function displayModal(index) {
         <p class="address">${street.number} ${street.name}, ${state} ${postcode}</p>
         <p>Birthday:
         ${date.getMonth()}/${date.getDate()}/${date.getFullYear()}</p>
+        <button class="prev" id="prev" onclick="prev(${index})">Prev</button>
+        <button class="next" id="next" onclick="next(${index})">Next</button>
     </div>
     `;
 	overlay.classList.remove("hidden");
 	modalContainer.innerHTML = modalHTML;
+}
+
+function next(index) {
+    let nextIndex = index + 1;
+    if (nextIndex <= modalList.length) {
+        displayModal(nextIndex);
+    }
+}
+
+function prev(index) {
+    let prevIndex = index - 1;
+    if (prevIndex <= modalList.length) {
+        displayModal(prevIndex);
+    }
 }
 
 function addSearch() {
@@ -114,7 +132,6 @@ function addSearch() {
     inputSubmit.value = "🔍";
     form.append(inputText);
     form.append(inputSubmit);
-    //console.log(form);
     document.getElementsByClassName("search-container")[0].append(form);
 }
 
@@ -123,6 +140,8 @@ function search(e) {
     const term = e.target[0].value;
     let results = employees.filter(checkName);
     removeElementsByClass("card");
+    modalList = [];
+    results.forEach(employee => { modalList.push(employee) });
     addEmployeesToDOM(results);
 
     function checkName(employee) {
